@@ -1,0 +1,21 @@
+[project]
+name = "pokemcp"
+version = "0.1.0"
+description = "Vision-centric MCP server for the mGBA GameBoy Advanced emulator. (Currently just POKEMON EMERALD)"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp>=2.1.1",
+    "pillow>=11.1.0",
+    "pytesseract>=0.3.13"
+]
+
+[project.scripts]
+pokemcp = "pokemcp.mGBA_mcp:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["pokemcp"]
