@@ -81,35 +81,45 @@ def pending_choice(upscaledGameScreenshot: Image, match_threshold: float = 0.8) 
     """
     CHOICE_BORDER_COLOR = (115, 107, 132)
     CHOICE_BORDER_TOLERANCE = 15
-    
-    # Native-resolution (BORDER_Y, X1, X2) for each known choice box position
+
     CHOICE_BOX_POSITIONS = [
-        {"name": "top_left",     "y": 30, "x1": 20,  "x2": 76},
-        {"name": "bottom_right", "y": 63, "x1": 164, "x2": 212},
-        {"name": "battle_right", "y": 63, "x1": 196, "x2": 236},
+        {"name": "top_left",     "sides": False, "y": 30, "x1": 20, "x2": 76},
+        {"name": "shop_menu",    "sides": True,  "x1": 12, "x2": 60, "y1": 4, "y2": 18},
+        {"name": "bottom_right", "sides": False, "y": 63,  "x1": 164, "x2": 212},
+        {"name": "battle_right", "sides": False, "y": 63,  "x1": 196, "x2": 236},
+        {"name": "quantity_box", "sides": False, "y": 78,  "x1": 139, "x2": 229},
     ]
-    
-    for pos in CHOICE_BOX_POSITIONS:
-        choiceStrip = upscaledGameScreenshot.crop((
-            pos["x1"] * SCALE,
-            pos["y"] * SCALE,
-            pos["x2"] * SCALE,
-            pos["y"] * SCALE + 2,
-        ))
-    
-        choicePixels = list(choiceStrip.getdata())
-        choiceMatches = sum(
-            1 for (r, g, b) in choicePixels
+
+    def match_ratio(pixels):
+        matches = sum(
+            1 for (r, g, b) in pixels
             if abs(r - CHOICE_BORDER_COLOR[0]) <= CHOICE_BORDER_TOLERANCE
             and abs(g - CHOICE_BORDER_COLOR[1]) <= CHOICE_BORDER_TOLERANCE
             and abs(b - CHOICE_BORDER_COLOR[2]) <= CHOICE_BORDER_TOLERANCE
         )
+        return matches / len(pixels)
 
-        # Iterate through all choice box positions to see if any are pending
-        if (choiceMatches / len(choicePixels)) >= match_threshold:
-            return True
+    for pos in CHOICE_BOX_POSITIONS:
+        if pos["sides"]:
+            left = upscaledGameScreenshot.crop((
+                pos["x1"] * SCALE, pos["y1"] * SCALE,
+                pos["x1"] * SCALE + 2, pos["y2"] * SCALE,
+            ))
+            right = upscaledGameScreenshot.crop((
+                pos["x2"] * SCALE, pos["y1"] * SCALE,
+                pos["x2"] * SCALE + 2, pos["y2"] * SCALE,
+            ))
+            if (match_ratio(list(left.getdata())) >= match_threshold
+                    and match_ratio(list(right.getdata())) >= match_threshold):
+                return True
+        else:
+            strip = upscaledGameScreenshot.crop((
+                pos["x1"] * SCALE, pos["y"] * SCALE,
+                pos["x2"] * SCALE, pos["y"] * SCALE + 2,
+            ))
+            if match_ratio(list(strip.getdata())) >= match_threshold:
+                return True
 
-    # No choice boxes found
     return False
 
 def in_dialogue(upscaledGameScreenshot: Image, match_threshold: float = 0.8) -> bool:
